@@ -1,40 +1,886 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Count Down For New Year</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="logic.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KEEP UP</title>
+
+<style>
+  /* Define the custom font using @font-face */
+  @font-face {
+    font-family: 'SamsungOne'; /* Choose a name for your font */
+    src: url('fonts/SamsungOne-Regular.woff2') format('woff2'),
+         url('fonts/SamsungOne-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap; /* Improves performance by showing fallback text first */
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden; /* Prevents scrollbars if content overflows */
+
+    display: flex;
+    align-items: center; /* Horizontally center content within the flex column */
+    flex-direction: column; /* Stack items vertically */
+
+    text-align: center;
+    /* Default color. This will be animated by gradientShift and inherited */
+    color: #fff; /* Start with white text for dark background */
+  }
+
+  /* Main content container to keep it centered */
+  .main-content {
+    margin: auto; /* This centers the content vertically and horizontally within remaining space */
+    display: flex; /* Make it a flex container too */
+    flex-direction: column;
+    align-items: center; /* Center children horizontally */
+    justify-content: center;
+  }
+
+  /* 🎨 Animated grayscale background */
+  body {
+    background: linear-gradient(270deg, #000000, #ffffff, #767676);
+    background-size: 600% 600%;
+    animation: gradientShift 22s ease infinite;
+  }
+
+  /* Keyframes for the background color and position, and now text color */
+  @keyframes gradientShift {
+    0%   {
+      background-position: 0% 50%;
+      color: #fff; /* White text for dark background */
+    }
+    50%  {
+      background-position: 100% 50%;
+      color: #000; /* Black text for light background */
+    }
+    100% {
+      background-position: 0% 50%;
+      color: #fff; /* White text for dark background */
+    }
+  }
+
+  /* 💎 Glass quote container */
+  .glass {
+    background: rgba(255, 255, 255, 0.1); /* Slightly more transparent */
+    backdrop-filter: blur(15px) saturate(180%); /* Increased blur and saturation for more glass-like distortion */
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    border-radius: 20px;
+    padding: 40px 50px;
+    max-width: 720px;
+    /* Enhanced box-shadow for a more prominent glass effect */
+    box-shadow:
+      0 8px 30px rgba(0, 0, 0, 0.2), /* Main outer shadow */
+      inset 0 0 15px rgba(255, 255, 255, 0.2); /* Inner highlight for depth */
+    border: 1px solid rgba(255, 255, 255, 0.35); /* Slightly more opaque border */
+    transition: background 1s ease, box-shadow 0.5s ease, transform 0.3s ease-out; /* Added transform transition */
+    margin-bottom: 20px; /* Space between glass container and refresh button */
+  }
+
+  /* Subtle jelly effect on hover */
+  .glass:hover {
+    transform: scale(1.005) rotate(0.5deg); /* Very subtle scale and rotation */
+    box-shadow:
+      0 10px 35px rgba(0, 0, 0, 0.3), /* Slightly larger shadow on hover */
+      inset 0 0 20px rgba(255, 255, 255, 0.3);
+  }
+
+  #quote {
+    font-family: 'SamsungOne', sans-serif; /* Apply the custom font */
+    font-size: 1.7rem;
+    line-height: 1.8; /* Adjusted line-height for better character animation flow */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Text shadow for depth */
+    display: block; /* Allows full width for text wrapping */
+    word-break: break-word; /* Ensures long words break if needed */
+  }
+
+  /* Style for individual characters in the quote */
+  #quote span {
+    display: inline; /* Use inline for natural text flow and wrapping */
+    position: relative; /* Allows transform on inline elements */
+    opacity: 0;
+    transform: scale(0.1); /* Start very small but not completely collapsed */
+    transition: transform 0.2s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.2s ease-out; /* Bouncy transition */
+    /* text-shadow inherits from #quote */
+  }
+
+  #author {
+    font-family: 'SamsungOne', sans-serif; /* Apply the custom font */
+    margin-top: 12px;
+    font-size: 1.1rem;
+    /* text-shadow for subtle depth, adapting to background color */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    transition: opacity 0.8s ease, color 1s ease, text-shadow 1s ease; /* Smooth transition for color and shadow */
+    opacity: 0;
+  }
+
+  /* --- Refresh Button with Options --- */
+  #refresh-container {
+    position: relative; /* For positioning the options menu */
+    margin-top: 25px;
+    margin-bottom: 20px; /* Space from search box */
+    z-index: 10; /* Ensure it's above other elements if needed */
+  }
+
+  #refresh {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: color 0.3s ease;
+    padding: 5px 10px; /* Make it easier to hover */
+    border-radius: 5px;
+    background-color: rgba(255,255,255,0.05); /* Subtle background */
+    min-width: 80px; /* Ensure space for countdown */
+    display: inline-flex; /* Use flex to center text/countdown */
+    align-items: center;
+    justify-content: center;
+  }
+
+  #refresh:hover {
+    color: #ff0000;
+    background-color: rgba(255,255,255,0.15);
+  }
+
+  .refresh-options {
+    position: absolute;
+    bottom: 100%; /* Position above #refresh */
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px); /* Adjust for positioning and initial hidden state */
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+    min-width: 180px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    z-index: 1; /* Ensure options are above the refresh button itself */
+  }
+
+  #refresh-container:hover .refresh-options {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-5px); /* Slide up slightly */
+  }
+
+  .refresh-options button {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+    white-space: nowrap; /* Prevent text wrapping */
+  }
+
+  .refresh-options button:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    transform: scale(1.02);
+  }
+  .refresh-options button.active-auto-refresh {
+    background-color: #28a745; /* Green when active */
+    color: white;
+    box-shadow: 0 0 5px #28a745;
+  }
+  /* --- End Refresh Button with Options --- */
+
+
+  /* Google Search Box Styling */
+  #google-search-box {
+    margin-top: 40px; /* Space from the main content */
+    margin-bottom: 20px; /* Space from the very bottom of the page */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+    opacity: 1; /* Default visible */
+    visibility: visible;
+  }
+  /* Hide search box when offline */
+  #google-search-box.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none; /* Disable interaction */
+  }
+
+  #google-search-form { /* Target the form */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px; /* Space between input and button */
+    transition: gap 0.3s ease; /* Animate gap when input disappears */
+  }
+
+  #google-search-form input[type="text"] {
+    padding: 10px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.5); /* Brighter border */
+    border-radius: 25px;
+    background-color: rgba(255, 255, 255, 0.3); /* Brighter background */
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+    width: 300px;
+    max-width: 80%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    transition: border-color 0.3s ease, background-color 0.3s ease, transform 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.3s ease, width 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+  }
+
+  #google-search-form input[type="text"]::placeholder {
+    color: rgba(255, 255, 255, 0.8); /* Better visibility on brighter background */
+  }
+
+  #google-search-form input[type="text"]:focus,
+  #google-search-form input[type="text"]:hover { /* Apply hover effect */
+    border-color: #007bff;
+    background-color: rgba(255, 255, 255, 0.4); /* Slightly brighter on hover/focus */
+    transform: scale(1.02); /* Subtle zoom effect */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3); /* Enhanced shadow */
+  }
+
+  /* --- Search Button Styling --- */
+  #google-search-box button {
+    position: relative;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px;
+    background-color: #007bff; /* Default background */
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    width: 100px; /* Initial width for "Search" */
+    height: 45px; /* Fixed height for consistent look */
+    overflow: hidden; /* Hide overflowing content */
+    
+    display: flex; /* For internal content alignment */
+    align-items: center;
+    justify-content: center;
+
+    transition: background-color 0.3s ease, width 0.3s ease, padding 0.3s ease, border-radius 0.3s ease, transform 0.3s ease;
+  }
+
+  /* Default button content state */
+  #google-search-box button .button-text-initial {
+    opacity: 1;
+    transition: opacity 0.2s ease;
+    white-space: nowrap; /* Prevent text wrapping */
+  }
+
+  #google-search-box button .button-hover-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0; /* Hidden by default */
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Space between icon and text */
+    transition: opacity 0.2s ease 0.1s; /* Slight delay to appear after initial text fades */
+  }
+
+  #google-search-box button .button-hover-content .search-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+  
+  #google-search-box button:hover {
+    background-color: #00aaff; /* Brighter background on hover */
+  }
+
+  #google-search-box button:hover .button-text-initial {
+    opacity: 0;
+  }
+
+  #google-search-box button:hover .button-hover-content {
+    opacity: 1;
+  }
+  /* --- End Search Button Styling --- */
+
+  /* Inactive Search Mode CSS */
+  #google-search-form.inactive-search-mode {
+    gap: 0; /* No gap when input is hidden */
+  }
+
+  #google-search-form.inactive-search-mode input[type="text"] {
+    opacity: 0;
+    width: 0; /* Shrink width */
+    padding: 0; /* Remove padding */
+    margin: 0; /* Remove margin */
+    border: 1px solid transparent; /* Keep border width but make transparent for smooth transition */
+    pointer-events: none; /* Disable interaction when hidden */
+    transform: scale(0.9); /* Slight scale down as it disappears */
+  }
+
+  #google-search-form.inactive-search-mode button {
+    width: auto; /* Allow width to adjust to "Search" text */
+    padding: 10px 20px; /* Default padding for "Search" button */
+    border-radius: 25px; /* Ensure it stays rounded */
+    transition: all 0.3s ease; /* Ensure all properties transition smoothly */
+    background-color: rgba(0, 123, 255, 0.7); /* Slightly dimmed in inactive state */
+    filter: brightness(1); /* Ensure normal brightness for inactive state */
+  }
+
+  /* In inactive mode, we want the "Search" text to show by default */
+  #google-search-form.inactive-search-mode button .button-text-initial {
+    opacity: 1; /* Ensure "Search" text is visible */
+  }
+  /* In inactive mode, hide the hover content by default */
+  #google-search-form.inactive-search-mode button .button-hover-content {
+    opacity: 0;
+  }
+
+  /* Hover effect for the button when in inactive mode */
+  #google-search-form.inactive-search-mode button:hover {
+    background-color: #00aaff; /* Brighter background on hover */
+    width: 120px; /* Expand width to fit icon + GO! + padding */
+    padding: 10px 15px; /* Adjust padding if needed for hover content */
+    border-radius: 25px; /* Keep rounded */
+    transform: scale(1.05); /* Slight pop out */
+  }
+
+  #google-search-form.inactive-search-mode button:hover .button-text-initial {
+    opacity: 0; /* Fade out "Search" text on hover */
+  }
+
+  #google-search-form.inactive-search-mode button:hover .button-hover-content {
+    opacity: 1; /* Fade in "🔍 GO!" on hover */
+  }
+
+
+  /* Keyframes for the brightness pulse */
+  @keyframes pulseBrightness {
+    0%   { filter: brightness(1); }
+    50%  { filter: brightness(1.3); } /* Brighter pulse */
+    100% { filter: brightness(1); } /* Return to normal brightness */
+  }
+
+  /* Apply pulse animation after transition to inactive mode */
+  #google-search-form button.pulse-animation {
+    animation: pulseBrightness 4s ease-in-out; /* 4s duration, plays once, smooth start/end */
+  }
+
+
+  /* Developer Name Styling */
+  #dev-name {
+    position: fixed; /* Position relative to the viewport */
+    bottom: 20px; /* 20px from the bottom */
+    right: 20px; /* 20px from the right */
+    font-family: 'SamsungOne', sans-serif;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5); /* Semi-transparent white for subtlety */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Subtle shadow for readability */
+    z-index: 100; /* Ensure it's on top */
+    transition: color 1s ease; /* Transition color with body's background changes */
+    cursor: pointer; /* Indicate it's interactive */
+  }
+
+  /* --- Network Status Dot Styling --- */
+  #network-status-dot {
+    position: fixed; /* Fixed position so it stays in place */
+    bottom: 20px; /* Same bottom margin as search box */
+    /* Dynamically adjust left/right to center it */
+    left: 50%; 
+    transform: translateX(-50%); /* Centering trick */
+    z-index: 99; /* Below dev name, above other content */
+    
+    width: 20px;
+    height: 20px;
+    background-color: red;
+    border-radius: 50%; /* Circle shape */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0; /* Hide text initially */
+    opacity: 0; /* Hidden by default, will show when offline */
+    visibility: hidden;
+    pointer-events: none; /* Not interactive when hidden */
+
+    /* Smooth transition for all properties */
+    transition: opacity 0.5s ease, visibility 0.5s ease, 
+                width 0.3s ease-out, height 0.3s ease-out, 
+                border-radius 0.3s ease-out, background-color 0.3s ease, 
+                font-size 0.3s ease, transform 0.3s ease;
+  }
+
+  #network-status-dot.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto; /* Enable interaction */
+  }
+
+  #network-status-dot.expanded {
+    width: 150px; /* Expanded width */
+    height: 40px; /* Expanded height */
+    border-radius: 10px; /* Rectangular shape with rounded corners */
+    background-color: #dc3545; /* Darker red */
+    font-size: 0.9rem; /* Show text */
+    white-space: nowrap; /* Prevent text wrapping */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* Add shadow */
+  }
+
+  /* --- Developer Details Modal --- */
+  #modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 1000; /* Above all other content */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  #modal-backdrop.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  #developer-details-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9); /* Initial slightly smaller state */
+    z-index: 1001; /* Above backdrop */
+    width: 80%;
+    max-width: 400px;
+    padding: 30px; /* Adjusted padding */
+    text-align: left; /* Align text within modal */
+    
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Smooth, slightly bouncy transition */
+  }
+
+  #developer-details-modal.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  #developer-details-modal h3 {
+    font-family: 'SamsungOne', sans-serif;
+    font-size: 1.4rem;
+    color: #fff;
+    margin-bottom: 15px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+
+  #developer-details-modal p {
+    font-family: 'SamsungOne', sans-serif;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  #developer-details-modal a {
+    color: #00aaff;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  #developer-details-modal a:hover {
+    color: #007bff;
+    text-decoration: underline;
+  }
+
+  #modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+
+  #modal-close-btn:hover {
+    color: #fff;
+    transform: rotate(90deg);
+  }
+
+</style>
 </head>
 <body>
-    <h1>New Year 2023</h1>
-    <div class="countDownContainer">
-        <div class="countdown-e days-c">
-            <p class="big-text" id="days">0 </p>
-            <span>days</span>
-        </div>
-
-        <div class="countdown-e hours-c">
-            <p class="big-text" id="hours">0 </p>
-            <span>Hours</span>
-        </div>
-
-        <div class="countdown-e minutes-c">
-            <p class="big-text" id="miniutes">0 </p>
-            <span>Minutes</span>
-        </div>
-
-
-        <div class="countdown-e seconds-c">
-            <p class="big-text" id="seconds">0</p>
-            <span>Seconds</span>
-        </div>
-
+  <div class="main-content">
+    <div id="glass" class="glass"> <!-- Added ID to glass for easier JS access -->
+      <div id="quote"></div> <!-- Renamed to #quote -->
+      <div id="author"></div>
     </div>
-    <footer>💕Made By TSNO💕 ©2022 since 2022</footer>
+    <div id="refresh-container">
+      <div id="refresh"><span id="refresh-text">↻ New quote</span></div>
+      <div class="refresh-options">
+        <button id="manual-refresh-btn">Change on Reload</button>
+        <button id="auto-refresh-5s-btn">Auto Change (5s)</button>
+        <button id="auto-refresh-15s-btn">Auto Change (15s)</button>
+        <button id="stop-auto-refresh-btn">Stop Auto Change</button>
+      </div>
+    </div>
+  </div>
 
+  <div id="google-search-box">
+    <form id="google-search-form" action="https://www.google.com/search" method="get" target="_blank">
+      <input type="text" id="search-input" name="q" placeholder="Search Google..." autocomplete="off">
+      <button type="submit" id="search-button">
+        <span class="button-text-initial">Search</span>
+        <span class="button-hover-content">
+          <span class="search-icon">🔍</span>
+          <span class="button-go-text">GO!</span>
+        </span>
+      </button>
+    </form>
+  </div>
+
+  <div id="network-status-dot">Check Network</div>
+
+  <div id="dev-name">Developed by Ometh</div> <!-- Your dev name here -->
+
+  <!-- Developer Details Modal -->
+  <div id="modal-backdrop"></div>
+  <div id="developer-details-modal" class="glass">
+    <button id="modal-close-btn">✖</button>
+    <h3>Who am I ?</h3>
+    <p>desing and developed by : MR Ometh <strong>TSNO</strong>.</p>
+    <p>This Page was desing mainly for keep you motivated and reduce the clutter and distractions in normal starting page</p>
+    <p>This satrting page do not contain any adds and will stay add free.</p>
+    <p>Contact: <a href="mailto:youremail@example.com">freefreefree123678@gmail.com</a></p>
+    <p>Made by TSNO | © at 2025</a></p>
+  </div>
+
+  <script>
+  // Get references to the quote and author elements once the DOM is loaded
+  const quoteElement = document.getElementById("quote"); // Now points to the container for spans
+  const authorElement = document.getElementById("author");
+  const glassElement = document.getElementById('glass'); // Get reference to the glass element
+  const refreshTextElement = document.getElementById('refresh-text'); // Get the text span of refresh button
+
+  const CHARACTER_ANIMATION_DELAY = 30; // Milliseconds between each character animation
+  const FADE_OUT_BUFFER_TIME = 100; // Small buffer for fade-out completion
+  const FADE_IN_BUFFER_TIME = 200; // Small buffer for author fade-in after character animation
+
+  let currentlyAnimating = false; // Flag to prevent multiple loadQuote calls during animation
+
+  // Function to display a new quote with the magnify-in animation
+  function displayNewQuote(quoteContent, authorName) {
+    return new Promise(resolve => {
+      quoteElement.innerHTML = ''; // Clear existing content immediately
+      authorElement.style.opacity = 0; // Hide author immediately
+
+      const characters = quoteContent.split('');
+
+      characters.forEach((char, index) => {
+        const charSpan = document.createElement('span');
+        charSpan.innerHTML = char === ' ' ? '&nbsp;' : char; 
+        quoteElement.appendChild(charSpan);
+
+        // Animate each character sequentially
+        setTimeout(() => {
+          charSpan.style.opacity = 1;
+          charSpan.style.transform = 'scale(1)';
+        }, index * CHARACTER_ANIMATION_DELAY);
+      });
+
+      // After all characters have started animating, fade in the author
+      const totalCharAnimationTime = characters.length * CHARACTER_ANIMATION_DELAY;
+      setTimeout(() => {
+        authorElement.innerText = "- " + authorName;
+        authorElement.style.opacity = 1;
+        // After all animations complete, revert the glass transform
+        glassElement.style.transform = 'none';
+        resolve(); // Resolve the promise when animations are done
+      }, totalCharAnimationTime + FADE_IN_BUFFER_TIME); // Delay author fade until characters are mostly done + a little extra
+    });
+  }
+
+
+  async function loadQuote() {
+    if (currentlyAnimating) {
+        console.log("Animation already in progress, skipping loadQuote call.");
+        return; // Prevent multiple calls if already animating
+    }
+    currentlyAnimating = true;
+
+    // Stop current countdown if any, so new one can start cleanly
+    stopCountdown();
     
+    // Phase 1: Fade out and shrink the current quote characters
+    const currentChars = Array.from(quoteElement.children);
+    if (currentChars.length > 0) {
+      // Hide author immediately
+      authorElement.style.opacity = 0;
+
+      // Calculate delay for fade-out sequence
+      const fadeOutDuration = currentChars.length * (CHARACTER_ANIMATION_DELAY / 2);
+
+      currentChars.reverse().forEach((charSpan, index) => { // Animate out in reverse order
+        setTimeout(() => {
+          charSpan.style.opacity = 0;
+          charSpan.style.transform = 'scale(0.1)'; // Shrink back to a small scale
+        }, index * (CHARACTER_ANIMATION_DELAY / 2)); // Faster fade-out
+      });
+
+      // Wait for old quote fade-out to complete
+      await new Promise(resolve => setTimeout(resolve, fadeOutDuration + FADE_OUT_BUFFER_TIME));
+    }
+
+    // Phase 2: Fetch and display new quote
+    await fetchQuoteAndDisplay();
+
+    // After all animations (fade-out, fetch, display new) are complete:
+    currentlyAnimating = false;
+    // Check if auto-refresh is active and needs to queue the next tick
+    if (activeRefreshInterval !== null) {
+        autoRefreshNextTick(); 
+    }
+  }
+
+  async function fetchQuoteAndDisplay() {
+    // Apply a subtle scale/translate to glass before content updates
+    glassElement.style.transform = 'scale(1.01) translateY(-5px)';
+
+    try {
+      const response = await fetch("http://api.quotable.io/random");
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const result = await response.json();
+      await displayNewQuote(result.content, result.author); // Wait for new quote to display
+    } catch (error) {
+      console.error("Error fetching quote:", error);
+      await displayNewQuote("Failed to load quote.", "Check internet connection"); // Display error with animation
+    }
+  }
+
+
+  // --- Inactivity Detection for Search Box ---
+  const searchForm = document.getElementById('google-search-form');
+  const searchInput = document.getElementById('search-input');
+  const searchButton = document.getElementById('search-button'); // Get button reference
+  const googleSearchBox = document.getElementById('google-search-box'); // Container for search box
+
+  let inactivityTimer;
+  const INACTIVITY_TIMEOUT = 5000; // 5 seconds
+
+  function setInactiveMode() {
+    searchForm.classList.add('inactive-search-mode');
+    setTimeout(() => {
+      searchButton.classList.add('pulse-animation');
+    }, 50); // Small delay to apply pulse after mode change
+  }
+
+  function setActiveMode() {
+    searchForm.classList.remove('inactive-search-mode');
+    searchButton.classList.remove('pulse-animation'); // Remove animation class on interaction
+    searchInput.disabled = false; // Re-enable input field
+  }
+
+  function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    setActiveMode(); // Ensure active mode immediately on interaction
+    inactivityTimer = setTimeout(setInactiveMode, INACTIVITY_TIMEOUT);
+  }
+
+  searchButton.addEventListener('animationend', (event) => {
+    if (event.animationName === 'pulseBrightness') {
+      searchButton.classList.remove('pulse-animation');
+    }
+  });
+
+  document.addEventListener('mousemove', resetInactivityTimer);
+  document.addEventListener('keydown', resetInactivityTimer);
+  document.addEventListener('scroll', resetInactivityTimer); // Add scroll for completeness
+  searchForm.addEventListener('mouseenter', resetInactivityTimer); // Keep active if hovering over the form
+  searchForm.addEventListener('focusin', resetInactivityTimer); // Keep active if focusing on input/button
+
+  // --- End Inactivity Detection ---
+
+
+  // --- Network Status Detection ---
+  const networkStatusDot = document.getElementById('network-status-dot');
+
+  function updateNetworkStatus() {
+    if (navigator.onLine) {
+      googleSearchBox.classList.remove('hidden'); // Show search box
+      networkStatusDot.classList.remove('visible'); // Hide red dot
+      networkStatusDot.classList.remove('expanded'); // Ensure not expanded
+      resetInactivityTimer(); // Restart search box inactivity timer
+      loadQuote(); // Load a quote if online
+    } else {
+      googleSearchBox.classList.add('hidden'); // Hide search box
+      networkStatusDot.classList.add('visible'); // Show red dot
+      // Clear inactivity timer when offline
+      clearTimeout(inactivityTimer); 
+      setActiveMode(); // Also reset search form to default just in case
+      // Display offline message directly, no need to trigger full animation chain
+      displayNewQuote("No Internet Connection.", "Please check your network.");
+      stopAutoRefresh(); // Stop auto-refresh if offline
+    }
+  }
+
+  // Initial check
+  window.onload = updateNetworkStatus; // Call on load to set initial state
+
+  // Listen for online/offline events
+  window.addEventListener('online', updateNetworkStatus);
+  window.addEventListener('offline', updateNetworkStatus);
+
+  // Expand/collapse network status dot on hover
+  networkStatusDot.addEventListener('mouseenter', () => {
+    if (!navigator.onLine) {
+      networkStatusDot.classList.add('expanded');
+    }
+  });
+  networkStatusDot.addEventListener('mouseleave', () => {
+    if (!navigator.onLine) {
+      networkStatusDot.classList.remove('expanded');
+    }
+  });
+  // --- End Network Status Detection ---
+
+
+  // --- Auto-Refresh Logic ---
+  const manualRefreshBtn = document.getElementById('manual-refresh-btn');
+  const autoRefresh5sBtn = document.getElementById('auto-refresh-5s-btn');
+  const autoRefresh15sBtn = document.getElementById('auto-refresh-15s-btn');
+  const stopAutoRefreshBtn = document.getElementById('stop-auto-refresh-btn');
+  const refreshButton = document.getElementById('refresh'); // The main refresh button
+
+  let autoRefreshTimeoutId = null; // Changed to Timeout for one-shot delay
+  let countdownIntervalId = null;
+  let activeRefreshInterval = null; // Stores the interval in ms (e.g., 5000)
+  let activeRefreshButton = null; // Stores reference to the active auto-refresh button
+  let countdownRemaining = 0;
+
+  function updateRefreshText(text) {
+      refreshTextElement.textContent = text;
+  }
+
+  function startCountdown(seconds) {
+      stopCountdown(); // Clear any existing countdown
+      countdownRemaining = seconds;
+      updateRefreshText(countdownRemaining.toString() + "s"); 
+
+      countdownIntervalId = setInterval(() => {
+          countdownRemaining--;
+          if (countdownRemaining > 0) {
+              updateRefreshText(countdownRemaining.toString() + "s");
+          } else {
+              stopCountdown();
+              updateRefreshText("↻ New quote"); // Reset text after countdown
+          }
+      }, 1000);
+  }
+
+  function stopCountdown() {
+      if (countdownIntervalId !== null) {
+          clearInterval(countdownIntervalId);
+          countdownIntervalId = null;
+      }
+      updateRefreshText("↻ New quote"); // Always reset to default text
+  }
+
+  function autoRefreshNextTick() {
+    // Clear any previous scheduled next tick
+    clearTimeout(autoRefreshTimeoutId); 
+
+    // If auto-refresh is active, start a new countdown and schedule the next loadQuote
+    if (activeRefreshInterval !== null) {
+        startCountdown(activeRefreshInterval / 1000); // Start visual countdown
+        autoRefreshTimeoutId = setTimeout(() => {
+            // This is the actual trigger for the next auto-refresh
+            loadQuote(); 
+        }, activeRefreshInterval);
+    }
+  }
+
+  function stopAutoRefresh() {
+    clearTimeout(autoRefreshTimeoutId); // Clear any pending auto-refresh tick
+    stopCountdown(); // Stop visual countdown
+    if (activeRefreshButton) {
+      activeRefreshButton.classList.remove('active-auto-refresh');
+    }
+    activeRefreshInterval = null;
+    activeRefreshButton = null;
+    console.log("Auto-refresh stopped.");
+  }
+
+  function startAutoRefresh(interval, buttonElement) {
+    stopAutoRefresh(); // Stop any existing auto-refresh
+
+    activeRefreshInterval = interval;
+    activeRefreshButton = buttonElement;
+    activeRefreshButton.classList.add('active-auto-refresh');
+
+    // Trigger the first loadQuote(), autoRefreshNextTick will handle subsequent calls
+    loadQuote(); 
+    console.log(`Auto-refresh set to: every ${interval / 1000} seconds.`);
+  }
+
+  // Event Listeners for auto-refresh options
+  manualRefreshBtn.addEventListener('click', () => {
+    stopAutoRefresh(); // Stop auto-refresh if active
+    loadQuote(); // Load a single new quote
+  });
+
+  autoRefresh5sBtn.addEventListener('click', () => startAutoRefresh(5000, autoRefresh5sBtn));
+  autoRefresh15sBtn.addEventListener('click', () => startAutoRefresh(15000, autoRefresh15sBtn));
+  stopAutoRefreshBtn.addEventListener('click', stopAutoRefresh);
+
+  // --- End Auto-Refresh Logic ---
+
+  // --- Developer Details Modal Logic ---
+  const devNameElement = document.getElementById('dev-name');
+  const developerDetailsModal = document.getElementById('developer-details-modal');
+  const modalBackdrop = document.getElementById('modal-backdrop');
+  const modalCloseBtn = document.getElementById('modal-close-btn');
+
+  function showDeveloperDetails() {
+    modalBackdrop.classList.add('visible');
+    developerDetailsModal.classList.add('visible');
+  }
+
+  function hideDeveloperDetails() {
+    modalBackdrop.classList.remove('visible');
+    developerDetailsModal.classList.remove('visible');
+  }
+
+  // Event listener for double-click on developer name
+  devNameElement.addEventListener('dblclick', showDeveloperDetails);
+
+  // Event listener for close button
+  modalCloseBtn.addEventListener('click', hideDeveloperDetails);
+
+  // Event listener for clicking on the backdrop
+  modalBackdrop.addEventListener('click', hideDeveloperDetails);
+
+  // Event listener for Esc key
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && developerDetailsModal.classList.contains('visible')) {
+      hideDeveloperDetails();
+    }
+  });
+  // --- End Developer Details Modal Logic ---
+
+  </script>
+
 </body>
+
 </html>
+
